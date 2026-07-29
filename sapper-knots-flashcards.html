@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sapper Knots — Flashcards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil:wght@500;700;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --olive-950:#171b13;
+    --olive-900:#20261a;
+    --olive-800:#2c3423;
+    --khaki:#d9cda3;
+    --khaki-dim:#c3b78f;
+    --rust:#c1502e;
+    --rust-dim:#8f3b21;
+    --steel:#5c6b57;
+    --paper:#efe8d2;
+    --ok:#7a9463;
+    --line:rgba(217,205,163,0.18);
+    --shadow: 0 18px 40px rgba(0,0,0,0.45);
+  }
+
+  *{box-sizing:border-box;}
+
+  .skk-wrap{
+    background:
+      radial-gradient(ellipse at 20% -10%, rgba(193,80,46,0.10), transparent 45%),
+      radial-gradient(ellipse at 100% 0%, rgba(92,107,87,0.18), transparent 50%),
+      var(--olive-950);
+    color:var(--khaki);
+    font-family:'JetBrains Mono', monospace;
+    padding:48px 20px 64px;
+    min-height:100%;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .skk-inner{ max-width:1140px; margin:0 auto; }
+
+  /* ---------- Header ---------- */
+  .skk-header{
+    display:flex; flex-direction:column; align-items:center; text-align:center;
+    margin-bottom:34px;
+  }
+  .skk-tag{
+    font-size:11px; letter-spacing:0.32em; text-transform:uppercase;
+    color:var(--rust); font-weight:700; margin-bottom:14px;
+    border:1px solid var(--rust-dim); padding:5px 14px; border-radius:2px;
+    background:rgba(193,80,46,0.08);
+  }
+  .skk-title{
+    font-family:'Big Shoulders Stencil', sans-serif;
+    font-weight:900;
+    font-size:clamp(46px, 9vw, 96px);
+    letter-spacing:0.03em;
+    line-height:0.92;
+    margin:0;
+    color:var(--paper);
+    text-shadow: 3px 3px 0 rgba(193,80,46,0.35);
+  }
+  .skk-title span{ color:var(--rust); }
+  .skk-rope{
+    width:220px; height:10px; margin:16px 0 14px;
+    background-image: repeating-linear-gradient(135deg, var(--khaki-dim) 0 6px, transparent 6px 12px);
+    opacity:0.55;
+  }
+  .skk-subtitle{
+    font-size:13px; letter-spacing:0.04em; color:var(--khaki-dim);
+    max-width:520px; line-height:1.6;
+  }
+
+  /* ---------- Controls ---------- */
+  .skk-controls{
+    display:flex; flex-wrap:wrap; align-items:center; justify-content:center;
+    gap:12px; margin:30px 0 8px;
+  }
+  .skk-btn{
+    font-family:'JetBrains Mono', monospace;
+    font-weight:600; font-size:12px; letter-spacing:0.08em; text-transform:uppercase;
+    background:transparent; color:var(--khaki);
+    border:1px solid var(--line); padding:11px 18px; border-radius:2px;
+    cursor:pointer; transition:all .18s ease;
+  }
+  .skk-btn:hover{ border-color:var(--rust); color:var(--paper); background:rgba(193,80,46,0.12); }
+  .skk-btn:focus-visible{ outline:2px solid var(--rust); outline-offset:2px; }
+  .skk-btn--primary{ background:var(--rust); border-color:var(--rust); color:var(--paper); }
+  .skk-btn--primary:hover{ background:var(--rust-dim); border-color:var(--rust-dim); }
+
+  .skk-progress{
+    font-size:12px; letter-spacing:0.1em; color:var(--khaki-dim);
+    display:flex; align-items:center; gap:10px; margin-left:6px;
+  }
+  .skk-progress b{ color:var(--paper); }
+  .skk-progress-bar{
+    width:120px; height:6px; background:var(--olive-800); border-radius:3px; overflow:hidden;
+    border:1px solid var(--line);
+  }
+  .skk-progress-fill{
+    height:100%; width:0%; background:var(--ok); transition:width .3s ease;
+  }
+
+  /* ---------- Grid ---------- */
+  .skk-grid{
+    margin-top:30px;
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(250px, 1fr));
+    gap:22px;
+  }
+
+  .skk-card{
+    perspective:1400px;
+    height:280px;
+    outline:none;
+  }
+  .skk-card-inner{
+    position:relative; width:100%; height:100%;
+    transform-style:preserve-3d;
+    transition:transform .55s cubic-bezier(.2,.8,.3,1);
+    cursor:pointer;
+  }
+  .skk-card.is-flipped .skk-card-inner{ transform:rotateY(180deg); }
+  .skk-card:focus-visible .skk-card-inner{ outline:2px solid var(--rust); outline-offset:4px; }
+
+  .skk-face{
+    position:absolute; inset:0;
+    backface-visibility:hidden;
+    border-radius:6px;
+    display:flex; flex-direction:column;
+    padding:18px;
+    box-shadow: var(--shadow);
+    border:1px solid var(--line);
+  }
+
+  .skk-front{
+    background:
+      repeating-linear-gradient(0deg, transparent 0 3px, rgba(0,0,0,0.025) 3px 4px),
+      var(--khaki);
+    color:var(--olive-950);
+    align-items:center; justify-content:space-between; text-align:center;
+    border:2px dashed rgba(32,38,26,0.35);
+  }
+  .skk-front-eyebrow{
+    font-size:9.5px; letter-spacing:0.2em; text-transform:uppercase;
+    color:var(--rust-dim); font-weight:700; align-self:flex-start;
+  }
+  .skk-icon{ width:110px; height:88px; }
+  .skk-icon path, .skk-icon circle, .skk-icon line{
+    stroke:var(--olive-900); stroke-width:3.4; fill:none;
+    stroke-linecap:round; stroke-linejoin:round;
+  }
+  .skk-front-name{
+    font-family:'Big Shoulders Stencil', sans-serif;
+    font-weight:700; font-size:22px; letter-spacing:0.01em; line-height:1.05;
+  }
+  .skk-front-hint{
+    font-size:9px; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--olive-800); opacity:0.6;
+  }
+
+  .skk-back{
+    background:var(--olive-800);
+    transform:rotateY(180deg);
+    justify-content:space-between;
+  }
+  .skk-back-top{ overflow-y:auto; }
+  .skk-lang-row{ margin-bottom:12px; }
+  .skk-lang-row:last-of-type{ margin-bottom:0; }
+  .skk-lang-label{
+    font-size:9.5px; letter-spacing:0.2em; font-weight:700;
+    color:var(--rust); margin-bottom:5px; display:block;
+  }
+  .skk-lang-text{
+    font-size:12.5px; line-height:1.55; color:var(--paper); margin:0;
+  }
+  .skk-back-name{
+    font-family:'Big Shoulders Stencil', sans-serif;
+    font-size:15px; font-weight:700; letter-spacing:0.02em;
+    color:var(--khaki-dim); text-transform:uppercase;
+    border-top:1px solid var(--line); padding-top:10px; margin-top:10px;
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+  }
+  .skk-master-btn{
+    flex-shrink:0;
+    font-family:'JetBrains Mono', monospace;
+    font-size:9.5px; letter-spacing:0.06em; text-transform:uppercase;
+    border:1px solid var(--line); background:transparent; color:var(--khaki-dim);
+    padding:6px 9px; border-radius:2px; cursor:pointer;
+  }
+  .skk-master-btn:hover{ border-color:var(--ok); color:var(--paper); }
+
+  .skk-card.is-mastered .skk-face{ border-color:var(--ok); }
+  .skk-card.is-mastered .skk-master-btn{ background:var(--ok); border-color:var(--ok); color:var(--olive-950); font-weight:700; }
+
+  .skk-footer{
+    text-align:center; margin-top:40px; font-size:10.5px; letter-spacing:0.1em;
+    color:var(--khaki-dim); opacity:0.55;
+  }
+
+  @media (max-width:520px){
+    .skk-wrap{ padding:34px 14px 48px; }
+    .skk-card{ height:300px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .skk-card-inner{ transition:none; }
+  }
+</style>
+</head>
+<body>
+<div class="skk-wrap">
+  <div class="skk-inner">
+
+    <header class="skk-header">
+      <div class="skk-tag">Field Reference · Referência de Campo</div>
+      <h1 class="skk-title">SAPPER<br><span>KNOTS</span></h1>
+      <div class="skk-rope"></div>
+      <p class="skk-subtitle">Palczuk - Toque no card para virar. 14 nós essenciais — nome e ilustração de um lado, descrição em português e inglês do outro.</p>
+    </header>
+
+    <div class="skk-controls">
+      <button class="skk-btn skk-btn--primary" id="skk-flip-all">Virar todos</button>
+      <button class="skk-btn" id="skk-shuffle">Embaralhar</button>
+      <button class="skk-btn" id="skk-reset">Reiniciar progresso</button>
+      <div class="skk-progress">
+        <span>Dominados: <b id="skk-count">0</b>/14</span>
+        <span class="skk-progress-bar"><span class="skk-progress-fill" id="skk-progress-fill"></span></span>
+      </div>
+    </div>
+
+    <div class="skk-grid" id="skk-grid"></div>
+
+    <div class="skk-footer">PALCZUK - SAPPER KNOTS REFERENCE · EN / PT</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var ICONS = {
+    water: '<path d="M20 60 Q40 30 60 60 T100 60" /><path d="M20 70 Q40 40 60 70 T100 70" />',
+    square: '<path d="M30 40 Q60 20 60 50 Q60 80 30 60" /><path d="M90 40 Q60 20 60 50 Q60 80 90 60" />',
+    fig8bend: '<path d="M35 30 a14 14 0 1 0 0.1 0" /><path d="M35 30 Q60 55 35 80 a14 14 0 1 0 0.1 0" /><path d="M85 30 a14 14 0 1 1 -0.1 0" /><path d="M85 30 Q60 55 85 80 a14 14 0 1 1 -0.1 0" />',
+    bowline: '<circle cx="45" cy="55" r="24" /><path d="M69 55 L100 55" /><path d="M45 31 Q30 15 45 12 Q58 10 55 25" />',
+    clove: '<line x1="60" y1="10" x2="60" y2="90" /><path d="M30 35 Q60 20 90 35" /><path d="M30 55 Q60 40 90 55" /><path d="M30 55 Q60 70 90 55" transform="translate(0,10)"/>',
+    roundturn: '<line x1="60" y1="8" x2="60" y2="92" /><ellipse cx="60" cy="35" rx="26" ry="12" /><path d="M34 60 Q60 48 86 60" /><path d="M34 76 Q60 64 86 76" />',
+    dblfig8: '<path d="M55 20 a16 16 0 1 0 0.1 0" /><path d="M55 20 Q85 45 55 70" /><circle cx="55" cy="80" r="14" fill="none" />',
+    slipfig8: '<path d="M45 20 a15 15 0 1 0 0.1 0" /><path d="M45 20 Q75 45 45 70 Q25 85 15 70" /><path d="M45 70 L45 55" stroke-dasharray="4 5" />',
+    midprusik: '<line x1="10" y1="50" x2="110" y2="50" /><path d="M45 35 Q55 50 45 65 Q35 50 45 35" /><path d="M60 35 Q70 50 60 65 Q50 50 60 35" /><path d="M75 35 Q85 50 75 65 Q65 50 75 35" />',
+    twoloop8: '<path d="M60 25 a15 15 0 1 0 0.1 0" /><path d="M45 40 Q30 55 20 40 Q10 25 25 20" /><path d="M75 40 Q90 55 100 40 Q110 25 95 20" />',
+    retrace8: '<path d="M35 25 a14 14 0 1 0 0.1 0" /><path d="M35 25 Q60 50 35 75 a14 14 0 1 0 0.1 0" /><path d="M40 25 a14 14 0 1 0 0.1 0" opacity="0.55" /><path d="M40 25 Q65 50 40 75 a14 14 0 1 0 0.1 0" opacity="0.55" />',
+    threeloop: '<circle cx="35" cy="45" r="14" /><circle cx="65" cy="45" r="14" /><circle cx="50" cy="72" r="14" /><path d="M85 45 L110 45" />',
+    endprusik: '<line x1="10" y1="50" x2="80" y2="50" /><path d="M50 35 Q60 50 50 65 Q40 50 50 35" /><path d="M65 35 Q75 50 65 65 Q55 50 65 35" /><path d="M80 50 Q95 40 100 55 Q102 68 90 65" />',
+    munter: '<ellipse cx="60" cy="30" rx="18" ry="12" /><path d="M30 60 Q45 40 60 60 Q75 80 90 60" /><path d="M30 60 Q45 80 60 60" opacity="0.5" />'
+  };
+
+  var DATA = [
+    { name:"Water Knot", icon:"water",
+      en:"Used to join the ends of tubular webbing.",
+      pt:"Usado para unir as extremidades de fitas tubulares." },
+    { name:"Square Knot", icon:"square",
+      en:"Used to join the ends of two ropes of equal diameter together while under tension.",
+      pt:"Usado para unir duas cordas de mesmo diâmetro sob tensão." },
+    { name:"Figure-Eight Bend", icon:"fig8bend",
+      en:"Used to join the ends of two ropes of equal or similar diameter (maximum 5 mm difference).",
+      pt:"Usado para unir duas cordas de diâmetro igual ou semelhante (diferença máxima de 5 mm)." },
+    { name:"Bowline", icon:"bowline",
+      en:"Tie the end of a rope around an anchor point when you have alternating tension, or form a fixed loop.",
+      pt:"Amarra a extremidade da corda a um ponto de ancoragem ou forma uma alça fixa." },
+    { name:"Clove Hitch", icon:"clove",
+      en:"Anchor the end of the rope under tension.",
+      pt:"Ancorar a extremidade da corda sob tensão." },
+    { name:"Round Turn & Two Half Hitches", icon:"roundturn",
+      en:"Tie the end of a rope to an anchor. Requires constant tension.",
+      pt:"Amarrar a corda a uma ancoragem. Requer tensão constante." },
+    { name:"Double Figure-Eight", icon:"dblfig8",
+      en:"Form a fixed loop in a rope.",
+      pt:"Formar uma alça fixa na corda." },
+    { name:"Middle-of-the-Rope Figure-Eight Slip Knot", icon:"slipfig8",
+      en:"Form an adjustable bight in a rope.",
+      pt:"Formar uma alça ajustável na corda." },
+    { name:"Middle-of-the-Rope Prusik", icon:"midprusik",
+      en:"Attach a movable rope to a fixed rope.",
+      pt:"Prender uma corda móvel a uma corda fixa." },
+    { name:"Two-Loop Figure-Eight", icon:"twoloop8",
+      en:"Form two adjustable fixed loops in a rope.",
+      pt:"Formar duas alças fixas ajustáveis." },
+    { name:"Figure-Eight Retrace", icon:"retrace8",
+      en:"Tie the climbing rope around a fixed object or harness.",
+      pt:"Amarrar a corda de escalada a um objeto fixo ou ao arnês." },
+    { name:"Three-Loop Bowline", icon:"threeloop",
+      en:"Form three fixed loops. Commonly used as an anchor knot.",
+      pt:"Formar três alças fixas. Normalmente usado como nó de ancoragem." },
+    { name:"End-of-Rope Prusik", icon:"endprusik",
+      en:"Attach a movable rope to a fixed rope at the end of a rope.",
+      pt:"Prender uma corda móvel a uma corda fixa na extremidade." },
+    { name:"Munter Hitch", icon:"munter",
+      en:"Form a mechanical belay.",
+      pt:"Criar um sistema de belay mecânico." }
+  ];
+
+  var STORAGE_KEY = "skk_mastered_v1";
+  var grid = document.getElementById("skk-grid");
+  var countEl = document.getElementById("skk-count");
+  var fillEl = document.getElementById("skk-progress-fill");
+
+  function loadMastered(){
+    try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function saveMastered(obj){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); }catch(e){}
+  }
+  var mastered = loadMastered();
+
+  function updateProgress(){
+    var n = Object.keys(mastered).filter(function(k){ return mastered[k]; }).length;
+    countEl.textContent = n;
+    fillEl.style.width = Math.round((n / DATA.length) * 100) + "%";
+  }
+
+  function buildCard(item, idx){
+    var wrap = document.createElement("div");
+    wrap.className = "skk-card";
+    wrap.tabIndex = 0;
+    wrap.setAttribute("role","button");
+    wrap.setAttribute("aria-label", "Flashcard: " + item.name);
+    if(mastered[idx]) wrap.classList.add("is-mastered");
+
+    var inner = document.createElement("div");
+    inner.className = "skk-card-inner";
+
+    var front = document.createElement("div");
+    front.className = "skk-face skk-front";
+    front.innerHTML =
+      '<span class="skk-front-eyebrow">Nó Sapper #' + (idx+1) + '</span>' +
+      '<svg class="skk-icon" viewBox="0 0 120 100">' + ICONS[item.icon] + '</svg>' +
+      '<div class="skk-front-name">' + item.name + '</div>' +
+      '<span class="skk-front-hint">toque para virar</span>';
+
+    var back = document.createElement("div");
+    back.className = "skk-face skk-back";
+    back.innerHTML =
+      '<div class="skk-back-top">' +
+        '<div class="skk-lang-row"><span class="skk-lang-label">PT</span><p class="skk-lang-text">' + item.pt + '</p></div>' +
+        '<div class="skk-lang-row"><span class="skk-lang-label">EN</span><p class="skk-lang-text">' + item.en + '</p></div>' +
+      '</div>' +
+      '<div class="skk-back-name">' + item.name + '<button class="skk-master-btn" type="button">' + (mastered[idx] ? "✓ Sei" : "Marcar") + '</button></div>';
+
+    inner.appendChild(front);
+    inner.appendChild(back);
+    wrap.appendChild(inner);
+
+    wrap.addEventListener("click", function(e){
+      if(e.target.classList.contains("skk-master-btn")) return;
+      wrap.classList.toggle("is-flipped");
+    });
+    wrap.addEventListener("keydown", function(e){
+      if(e.key === "Enter" || e.key === " "){
+        e.preventDefault();
+        wrap.classList.toggle("is-flipped");
+      }
+    });
+
+    var masterBtn = back.querySelector(".skk-master-btn");
+    masterBtn.addEventListener("click", function(e){
+      e.stopPropagation();
+      mastered[idx] = !mastered[idx];
+      wrap.classList.toggle("is-mastered", !!mastered[idx]);
+      masterBtn.textContent = mastered[idx] ? "✓ Sei" : "Marcar";
+      saveMastered(mastered);
+      updateProgress();
+    });
+
+    return wrap;
+  }
+
+  function render(list){
+    grid.innerHTML = "";
+    list.forEach(function(item){
+      grid.appendChild(buildCard(item, item._idx));
+    });
+  }
+
+  DATA.forEach(function(d, i){ d._idx = i; });
+  render(DATA);
+  updateProgress();
+
+  document.getElementById("skk-flip-all").addEventListener("click", function(){
+    var cards = grid.querySelectorAll(".skk-card");
+    var anyUnflipped = Array.prototype.some.call(cards, function(c){ return !c.classList.contains("is-flipped"); });
+    cards.forEach(function(c){ c.classList.toggle("is-flipped", anyUnflipped); });
+  });
+
+  document.getElementById("skk-shuffle").addEventListener("click", function(){
+    var list = DATA.slice();
+    for(var i = list.length - 1; i > 0; i--){
+      var j = Math.floor(Math.random() * (i+1));
+      var tmp = list[i]; list[i] = list[j]; list[j] = tmp;
+    }
+    render(list);
+  });
+
+  document.getElementById("skk-reset").addEventListener("click", function(){
+    if(!confirm("Reiniciar todo o progresso de memorização?")) return;
+    mastered = {};
+    saveMastered(mastered);
+    render(DATA);
+    updateProgress();
+  });
+})();
+</script>
+</body>
+</html>
