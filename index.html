@@ -159,27 +159,43 @@
     color:var(--olive-800); opacity:0.6;
   }
 
-  .skk-back{
-    background:var(--olive-800);
-    transform:rotateY(180deg);
-    justify-content:space-between;
-  }
-  .skk-back-top{ overflow-y:auto; }
+  /* Front now holds the quiz (description) */
+  .skk-front--quiz{ justify-content:flex-start; align-items:stretch; text-align:left; }
+  .skk-quiz-body{ flex:1; overflow-y:auto; display:flex; flex-direction:column; justify-content:center; }
   .skk-lang-row{ margin-bottom:12px; }
   .skk-lang-row:last-of-type{ margin-bottom:0; }
   .skk-lang-label{
     font-size:9.5px; letter-spacing:0.2em; font-weight:700;
     color:var(--rust); margin-bottom:5px; display:block;
   }
+  .skk-lang-label--dark{ color:var(--rust-dim); }
   .skk-lang-text{
     font-size:12.5px; line-height:1.55; color:var(--paper); margin:0;
   }
+  .skk-lang-text--dark{ color:var(--olive-950); }
+  .skk-front-hint{ text-align:center; }
+
+  /* Back now reveals the answer: name + icon */
+  .skk-back{
+    background:var(--khaki);
+    color:var(--olive-950);
+    transform:rotateY(180deg);
+    align-items:center; justify-content:space-between; text-align:center;
+    border:2px dashed rgba(32,38,26,0.35);
+  }
+  .skk-front-eyebrow--onback{ color:var(--rust-dim); }
+  .skk-icon--onback{ width:110px; height:88px; }
   .skk-back-name{
     font-family:'Big Shoulders Stencil', sans-serif;
     font-size:15px; font-weight:700; letter-spacing:0.02em;
     color:var(--khaki-dim); text-transform:uppercase;
     border-top:1px solid var(--line); padding-top:10px; margin-top:10px;
     display:flex; align-items:center; justify-content:space-between; gap:8px;
+  }
+  .skk-back-name--answer{
+    width:100%; color:var(--olive-950); font-size:20px;
+    border-top:1px solid rgba(32,38,26,0.2);
+    flex-direction:column; gap:8px;
   }
   .skk-master-btn{
     flex-shrink:0;
@@ -189,6 +205,12 @@
     padding:6px 9px; border-radius:2px; cursor:pointer;
   }
   .skk-master-btn:hover{ border-color:var(--ok); color:var(--paper); }
+
+  .skk-back--answer .skk-master-btn{
+    border-color:rgba(32,38,26,0.35); color:var(--olive-800);
+  }
+  .skk-back--answer .skk-master-btn:hover{ border-color:var(--ok); color:var(--olive-950); background:rgba(122,148,99,0.18); }
+  .skk-card.is-mastered .skk-back--answer .skk-master-btn{ color:var(--olive-950); }
 
   .skk-card.is-mastered .skk-face{ border-color:var(--ok); }
   .skk-card.is-mastered .skk-master-btn{ background:var(--ok); border-color:var(--ok); color:var(--olive-950); font-weight:700; }
@@ -216,7 +238,7 @@
       <div class="skk-tag">Field Reference · Referência de Campo</div>
       <h1 class="skk-title">SAPPER<br><span>KNOTS</span></h1>
       <div class="skk-rope"></div>
-      <p class="skk-subtitle">Palczuk - Toque no card para virar. 14 nós essenciais — nome e ilustração de um lado, descrição em português e inglês do outro.</p>
+      <p class="skk-subtitle">Palczuk - Leia a descrição (PT/EN) e tente adivinhar o nó. Toque no card para revelar o nome e a ilustração.</p>
     </header>
 
     <div class="skk-controls">
@@ -324,28 +346,28 @@
     wrap.className = "skk-card";
     wrap.tabIndex = 0;
     wrap.setAttribute("role","button");
-    wrap.setAttribute("aria-label", "Flashcard: " + item.name);
+    wrap.setAttribute("aria-label", "Flashcard: adivinhe o nó pela descrição, resposta " + item.name);
     if(mastered[idx]) wrap.classList.add("is-mastered");
 
     var inner = document.createElement("div");
     inner.className = "skk-card-inner";
 
     var front = document.createElement("div");
-    front.className = "skk-face skk-front";
+    front.className = "skk-face skk-front skk-front--quiz";
     front.innerHTML =
       '<span class="skk-front-eyebrow">Nó Sapper #' + (idx+1) + '</span>' +
-      '<svg class="skk-icon" viewBox="0 0 120 100">' + ICONS[item.icon] + '</svg>' +
-      '<div class="skk-front-name">' + item.name + '</div>' +
-      '<span class="skk-front-hint">toque para virar</span>';
+      '<div class="skk-quiz-body">' +
+        '<div class="skk-lang-row"><span class="skk-lang-label skk-lang-label--dark">PT</span><p class="skk-lang-text skk-lang-text--dark">' + item.pt + '</p></div>' +
+        '<div class="skk-lang-row"><span class="skk-lang-label skk-lang-label--dark">EN</span><p class="skk-lang-text skk-lang-text--dark">' + item.en + '</p></div>' +
+      '</div>' +
+      '<span class="skk-front-hint">qual é o nó? toque para revelar</span>';
 
     var back = document.createElement("div");
-    back.className = "skk-face skk-back";
+    back.className = "skk-face skk-back skk-back--answer";
     back.innerHTML =
-      '<div class="skk-back-top">' +
-        '<div class="skk-lang-row"><span class="skk-lang-label">PT</span><p class="skk-lang-text">' + item.pt + '</p></div>' +
-        '<div class="skk-lang-row"><span class="skk-lang-label">EN</span><p class="skk-lang-text">' + item.en + '</p></div>' +
-      '</div>' +
-      '<div class="skk-back-name">' + item.name + '<button class="skk-master-btn" type="button">' + (mastered[idx] ? "✓ Sei" : "Marcar") + '</button></div>';
+      '<span class="skk-front-eyebrow skk-front-eyebrow--onback">Resposta</span>' +
+      '<svg class="skk-icon skk-icon--onback" viewBox="0 0 120 100">' + ICONS[item.icon] + '</svg>' +
+      '<div class="skk-back-name skk-back-name--answer">' + item.name + '<button class="skk-master-btn" type="button">' + (mastered[idx] ? "✓ Sei" : "Marcar") + '</button></div>';
 
     inner.appendChild(front);
     inner.appendChild(back);
